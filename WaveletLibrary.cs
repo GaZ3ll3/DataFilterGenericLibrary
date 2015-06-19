@@ -180,7 +180,10 @@ namespace DataFilterGenericLibrary
                             sx2[p++] = coeff[i][j] * coeff[i][j];
                         }
                     }
-
+                    
+                    // has to be sorted
+                    Array.Sort(sx2);
+                    
                     double min_risk = Double.MaxValue;
                     double curr_risk;
                     double cumsum = 0;
@@ -264,7 +267,7 @@ namespace DataFilterGenericLibrary
 
             for (int i = 0; i < coeff[n - 1].Length; i++)
             {
-                span[i] = coeff[n - 1][i];
+                span[i] = Math.Abs(coeff[n - 1][i]);//abs
             }
 
             Array.Sort(span);
@@ -284,7 +287,7 @@ namespace DataFilterGenericLibrary
 
                 for (int j = 0; j < coeff[i - 1].Length; j++)
                 {
-                    span[j] = coeff[i - 1][j];
+                    span[j] = Math.Abs(coeff[i - 1][j]);
                 }
 
                 Array.Sort(span);
