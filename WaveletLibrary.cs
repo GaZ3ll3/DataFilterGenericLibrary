@@ -38,9 +38,10 @@ namespace DataFilterGenericLibrary
             wden(ref double[] input , Threshold thres, bool soft, Scaling scale, int n, ref Wavelet w)
         {
             List<double[]> coeff = WaveletLibrary.wavedec(ref input, n, ref w);
+
             double[] output = new double[2 * ((input.Length + 1) / 2)];
 
-            double thr = thrselect(coeff, thres);
+            double thr;
 
             double[] scal;
 
@@ -56,6 +57,7 @@ namespace DataFilterGenericLibrary
                 case Scaling.sln:
                     scal = new double[n];
                     double ssc = sln_wnoisest(coeff, 1);
+                    Console.WriteLine("ssc : {0}", ssc);
                     for (int i = 0; i < n; i++)
                     {
                         scal[i] = ssc;
@@ -69,8 +71,35 @@ namespace DataFilterGenericLibrary
             }
 
 
+            // rescale
+
+
+
             for (int i = 0; i < n; i++)
             {
+                if (thres == Threshold.sqtwolog || thres == Threshold.minimaxi)
+                {
+                    thr = thrselect(coeff, thres);
+                }
+                else
+                {
+                    if (scal[i] < 1e-7 * coeff[i].Max())
+                    {
+                        thr = 0;
+                    }
+                    else
+                    {
+                        double[] tmp = new double[coeff[i].Length];
+
+                        Array.Copy(coeff[i], 0, tmp, 0, tmp.Length);
+
+                        for (int k = 0; k < tmp.Length; k++)
+                        {
+                            tmp[k] /= scal[i];
+                        }
+                        thr = thrselect(tmp, thres);
+                    }
+                }
                 for (int j = 0; j < coeff[i].Length; j++)
                 {
                     coeff[i][j] = wthr(coeff[i][j], scal[i] * thr, soft);
@@ -154,6 +183,94 @@ namespace DataFilterGenericLibrary
 
         }
 
+        private static double thrselect(double[] coeff, Threshold thres)
+        {
+            int n = coeff.Length;
+            double thr;
+
+            switch (thres)
+            {
+                case Threshold.rigrsure:
+                    double[] sx2 = new double[n];
+
+                    int p = 0;
+
+
+                    for (int j = 0; j < n; j++)
+                    {
+                        sx2[p++] = coeff[j] * coeff[j];
+                    }
+                    
+
+                    Array.Sort(sx2);
+
+                    double min_risk = Double.MaxValue;
+                    double curr_risk;
+                    double cumsum = 0;
+                    p = 0;
+
+                    for (int i = 1; i <= n; i++)
+                    {
+                        cumsum += sx2[i - 1];
+                        curr_risk = (n - 2 * (i) + cumsum + (n - i) * sx2[i - 1]) / (double)n;
+
+                        if (curr_risk < min_risk)
+                        {
+                            min_risk = curr_risk;
+                            p = i - 1;
+                        }
+                    }
+
+                    thr = Math.Sqrt(sx2[p]);
+
+                    break;
+                case Threshold.minimaxi:
+                    if (n <= 32)
+                    {
+                        thr = 0;
+                    }
+                    else
+                    {
+                        thr = 0.3936 + 0.1829 * (Math.Log(n) / Math.Log(2));
+                    }
+                    break;
+                case Threshold.heursure:
+
+                    double hthr = Math.Sqrt(2 * Math.Log(n));
+                    double eta = 0;
+
+                    for (int j = 0; j < coeff.Length; j++)
+                    {
+                        eta += coeff[j] * coeff[j];
+                    }
+                    
+
+                    eta -= n;
+                    eta /= (double)n;
+
+                    double crit = Math.Pow(Math.Log(n) / Math.Log(2), 1.5) / Math.Sqrt(n);
+
+                    if (eta < crit)
+                    {
+                        thr = hthr;
+                    }
+                    else
+                    {
+                        thr = Math.Min(thrselect(coeff, Threshold.rigrsure), hthr);
+                    }
+
+                    break;
+                case Threshold.sqtwolog:
+                    thr = Math.Sqrt(2 * Math.Log(n));
+                    break;
+                default:
+                    throw new Exception("Bad Args");
+
+
+            }
+            //Console.Write("thr: {0}", thr);
+            return thr;
+        }
 
         private static double thrselect(List<double[]> coeff, Threshold thres)
         {
@@ -166,6 +283,7 @@ namespace DataFilterGenericLibrary
                 n += x.Length;
             }
 
+            //Console.WriteLine("coeff len : {0} ", n);
             switch (thres)
             {
                 case Threshold.rigrsure:
@@ -180,10 +298,9 @@ namespace DataFilterGenericLibrary
                             sx2[p++] = coeff[i][j] * coeff[i][j];
                         }
                     }
-                    
-                    // has to be sorted
+
                     Array.Sort(sx2);
-                    
+
                     double min_risk = Double.MaxValue;
                     double curr_risk;
                     double cumsum = 0;
@@ -249,7 +366,8 @@ namespace DataFilterGenericLibrary
                     
                     
             }
-            return 0;
+            //Console.Write("thr: {0}", thr);
+            return thr;
         }
 
         private static double sln_wnoisest(List<double[]> coeff, int n)
@@ -267,12 +385,15 @@ namespace DataFilterGenericLibrary
 
             for (int i = 0; i < coeff[n - 1].Length; i++)
             {
-                span[i] = Math.Abs(coeff[n - 1][i]);//abs
+                span[i] = Math.Abs(coeff[n - 1][i]);
             }
+
+
 
             Array.Sort(span);
 
-            return span[ (ls + 1)/2 ]/ 0.6745;
+            
+            return ls % 2 == 0 ? (span[(ls) / 2 - 1] + span[(ls) / 2 ]) / 2 / 0.6745 : span[(ls + 1) / 2 - 1] / 0.6745;
         }
 
         private static double[] mln_wnoisest(List<double[]> coeff)
@@ -292,7 +413,7 @@ namespace DataFilterGenericLibrary
 
                 Array.Sort(span);
 
-                x[i - 1] = span[(ls + 1) / 2] / 0.6745;
+                x[i - 1] = ls % 2 == 0 ? (span[(ls) / 2 - 1] + span[(ls) / 2 ]) / 2 / 0.6745 : span[(ls + 1) / 2 - 1] / 0.6745;
             }
 
             return x;
@@ -740,22 +861,22 @@ namespace DataFilterGenericLibrary
 
         public static double[] h_6 = new double[] 
         { 
-            0.33267055295008261599851158914,
+            -0.33267055295008261599851158914,
             0.80689150931109257649449360409,
-            0.45987750211849157009515194215,
+            -0.45987750211849157009515194215,
             -0.13501102001025458869638990670,
-            -0.08544127388202666169281916918,
+            0.08544127388202666169281916918,
             0.03522629188570953660274066472
         };
 
         public static double[] g_6 = new double[]
         { 
             0.03522629188570953660274066472,
-            0.08544127388202666169281916918,
+            -0.08544127388202666169281916918,
             -0.13501102001025458869638990670,
-            -0.45987750211849157009515194215,
+            0.45987750211849157009515194215,
             0.80689150931109257649449360409,
-            -0.33267055295008261599851158914
+            0.33267055295008261599851158914
         };
 
         public static double[] h_8 = new double[]
@@ -964,50 +1085,50 @@ namespace DataFilterGenericLibrary
 
         public static double[] h_20 = new double[]
         {
-            0.02667005790055555358661744877,
+            -0.02667005790055555358661744877,//
             0.18817680007769148902089297368,
-            0.52720118893172558648174482796,
+            -0.52720118893172558648174482796,//
             0.68845903945360356574187178255,
-            0.28117234366057746074872699845,
+            -0.28117234366057746074872699845,//
             -0.24984642432731537941610189792,
-            -0.19594627437737704350429925432,
+            0.19594627437737704350429925432,//
             0.12736934033579326008267723320,
-            0.09305736460357235116035228984,
+            -0.09305736460357235116035228984,//
             -0.07139414716639708714533609308,
-            -0.02945753682187581285828323760,
+            0.02945753682187581285828323760,//
             0.03321267405934100173976365318,
-            0.00360655356695616965542329142,
+            -0.00360655356695616965542329142,//
             -0.01073317548333057504431811411,
-            0.00139535174705290116578931845,
+            -0.00139535174705290116578931845,//
             0.00199240529518505611715874224,
-            -0.00068585669495971162656137098,
+            0.00068585669495971162656137098,//
             -0.00011646685512928545095148097,
-            0.00009358867032006959133405013,
+            -0.00009358867032006959133405013,//
             -0.00001326420289452124481243668
         };
 
         public static double[] g_20 = new double[]
         { 
             -0.00001326420289452124481243668,
-            -0.00009358867032006959133405013,
+            0.00009358867032006959133405013,//
             -0.00011646685512928545095148097,
-            0.00068585669495971162656137098,
+            -0.00068585669495971162656137098,//
             0.00199240529518505611715874224,
-            -0.00139535174705290116578931845,
+            0.00139535174705290116578931845,//
             -0.01073317548333057504431811411,
-            -0.00360655356695616965542329142,
+            0.00360655356695616965542329142,//
             0.03321267405934100173976365318,
-            0.02945753682187581285828323760,
+            -0.02945753682187581285828323760,//
             -0.07139414716639708714533609308,
-            -0.09305736460357235116035228984,
+            0.09305736460357235116035228984,//
             0.12736934033579326008267723320,
-            0.19594627437737704350429925432,
+            -0.19594627437737704350429925432,//
             -0.24984642432731537941610189792,
-            -0.28117234366057746074872699845,
+            0.28117234366057746074872699845,//
             0.68845903945360356574187178255,
-            -0.52720118893172558648174482796,
+            0.52720118893172558648174482796,//
             0.18817680007769148902089297368,
-            -0.02667005790055555358661744877
+            0.02667005790055555358661744877//
         };
 
 
