@@ -328,6 +328,7 @@ namespace DataFilterGenericLibrary
                 output[_dataIndex] = 0;
             }
 
+            // parallel section
             Parallel.For(0, inputLength, _dataIndex =>
             {
                 int nr, nl;
