@@ -256,7 +256,7 @@ namespace DataFilterGenericLibrary
             double[] residual = new double[inputLength];
             double[] output = localRegression(k, m, input);
 
-            for (int _iter = 0; _iter < 2; _iter ++)
+            for (int _iter = 0; _iter < 5; _iter ++)
             {
                 
                 try
