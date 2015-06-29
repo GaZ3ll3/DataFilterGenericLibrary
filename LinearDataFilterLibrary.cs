@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics;
 
+
 namespace DataFilterGenericLibrary
 {
     public class LinearDataFilterLibrary
@@ -190,7 +191,8 @@ namespace DataFilterGenericLibrary
             if ((k % 2) == 0)
             {
                 // can workaround to plus 1.
-                throw new Exception(@"Bad Args.");
+                //throw new Exception(@"Bad Args.");
+                k = k + 1;
             }
 
 
@@ -254,7 +256,7 @@ namespace DataFilterGenericLibrary
             double[] residual = new double[inputLength];
             double[] output = localRegression(k, m, input);
 
-            for (int _iter = 0; _iter < 5; _iter ++)
+            for (int _iter = 0; _iter < 2; _iter ++)
             {
                 
                 try
@@ -316,7 +318,8 @@ namespace DataFilterGenericLibrary
             if ((k % 2) == 0)
             {
                 // can workaround to plus 1.
-                throw new Exception(@"Bad Args.");
+                //throw new Exception(@"Bad Args.");
+                k += 1;
             }
 
 
@@ -328,8 +331,7 @@ namespace DataFilterGenericLibrary
                 output[_dataIndex] = 0;
             }
 
-            // parallel section
-            Parallel.For(0, inputLength, _dataIndex =>
+            for (int _dataIndex = 0; _dataIndex < inputLength; _dataIndex++)
             {
                 int nr, nl;
 
@@ -350,7 +352,8 @@ namespace DataFilterGenericLibrary
                 {
                     output[_dataIndex] += _coeffs[nl + _shift] * input[_dataIndex + _shift];
                 }
-            });
+            }
+
            
 
         }
@@ -822,14 +825,14 @@ namespace DataFilterGenericLibrary
             }
 
             Array.Sort(weights);
-            double median = weights[weights.Length / 2];
+            double median = weights[(weights.Length + 1)/ 2];
 
 
             for (int _dataIndex = -nl; _dataIndex <= nr; _dataIndex++)
             {
                 weights[nl + _dataIndex] =
                     Math.Abs(residual[ind + _dataIndex]) < 6 * median ?
-                    Math.Pow((1 - Math.Pow(residual[nl + _dataIndex] / (6 * median), 2)), 2) : 0;
+                    Math.Pow((1 - Math.Pow(Math.Abs(residual[nl + _dataIndex]) / (6 * median), 4)), 2) : 0;
             }
         }
         #endregion
