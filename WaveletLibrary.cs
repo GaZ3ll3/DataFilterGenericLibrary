@@ -13,15 +13,6 @@ namespace DataFilterGenericLibrary
         {
             // default explict constructor
         }
-        public Wavelet(string mode)
-        {
-            //constructor from wavemode
-            // default offset = 0
-        }
-        public Wavelet(string mode, bool centered)
-        {
-
-        }
 
         public string waveletMode;
         public Double[] h1;
@@ -38,18 +29,18 @@ namespace DataFilterGenericLibrary
     #endregion
 
     #region Padding Enum Type
-    public enum Padding {sym, sp0, sp1, zero, per};
+    public enum Padding { sym, sp0, sp1, zero, per };
     #endregion
 
     #region Scaling Enum Type
-    public enum Scaling {one, sln, mln };
+    public enum Scaling { one, sln, mln };
     #endregion
 
     public class WaveletLibrary
     {
         #region Public Members
-        public static double[] 
-            wden(ref double[] input , Threshold thres, bool soft, Scaling scale, int n, ref Wavelet w)
+        public static double[]
+            wden(ref double[] input, Threshold thres, bool soft, Scaling scale, int n, ref Wavelet w)
         {
             List<double[]> coeff = WaveletLibrary.wavedec(ref input, n, ref w);
 
@@ -113,7 +104,7 @@ namespace DataFilterGenericLibrary
                 for (int j = 0; j < coeff[i].Length; j++)
                 {
                     coeff[i][j] = wthr(coeff[i][j], scal[i] * thr, soft);
-                }               
+                }
             }
 
             WaveletLibrary.waverec(ref output, coeff, ref w, 0, output.Length);
@@ -132,7 +123,7 @@ namespace DataFilterGenericLibrary
 
             switch (wmode[0])
             {
-                
+
                 case 'h':
                     w = Haar.haar_init(2, centered);
                     break;
@@ -214,18 +205,18 @@ namespace DataFilterGenericLibrary
             List<double[]> c = new List<double[]>();
 
             //workspaces
-            double[] tmp = new double[ s + 2 *(w.g1.Length - 1) + w.g1.Length - 1];
+            double[] tmp = new double[s + 2 * (w.g1.Length - 1) + w.g1.Length - 1];
             double[] z = new double[s + 2 * (w.g1.Length - 1) - w.g1.Length + 1];
             //pass by reference's value
             double[] iter = input;
 
             for (int k = 1; k <= n; ++k)
-            {                
+            {
                 // default extension sp0.
                 //todo : take other padding as argument in wavedec
-                Tuple<double[], double[]> x = dwt( ref z, ref tmp, ref iter, ref w, 0, Padding.sp0);                
-                c.Add(x.Item2);               
-                iter = x.Item1;                
+                Tuple<double[], double[]> x = dwt(ref z, ref tmp, ref iter, ref w, 0, Padding.sp0);
+                c.Add(x.Item2);
+                iter = x.Item1;
             }
 
             c.Add(iter);
@@ -271,7 +262,7 @@ namespace DataFilterGenericLibrary
                     {
                         sx2[p++] = coeff[j] * coeff[j];
                     }
-                    
+
 
                     Array.Sort(sx2);
 
@@ -314,7 +305,7 @@ namespace DataFilterGenericLibrary
                     {
                         eta += coeff[j] * coeff[j];
                     }
-                    
+
 
                     eta -= n;
                     eta /= (double)n;
@@ -417,13 +408,13 @@ namespace DataFilterGenericLibrary
                     eta -= n;
                     eta /= (double)n;
 
-                    double crit = Math.Pow(Math.Log(n)/ Math.Log(2), 1.5)/Math.Sqrt(n);
+                    double crit = Math.Pow(Math.Log(n) / Math.Log(2), 1.5) / Math.Sqrt(n);
 
                     if (eta < crit)
                     {
                         thr = hthr;
                     }
-                    else 
+                    else
                     {
                         thr = Math.Min(thrselect(coeff, Threshold.rigrsure), hthr);
                     }
@@ -434,8 +425,8 @@ namespace DataFilterGenericLibrary
                     break;
                 default:
                     throw new Exception("Bad Args");
-                    
-                    
+
+
             }
             //Console.Write("thr: {0}", thr);
             return thr;
@@ -443,9 +434,9 @@ namespace DataFilterGenericLibrary
 
         private static double sln_wnoisest(List<double[]> coeff, int n)
         {
-            int lx = coeff.Count() - 1 ;
+            int lx = coeff.Count() - 1;
 
-            if (n > lx  || n < 1)
+            if (n > lx || n < 1)
             {
                 throw new Exception("Bad Args");
             }
@@ -463,8 +454,8 @@ namespace DataFilterGenericLibrary
 
             Array.Sort(span);
 
-            
-            return ls % 2 == 0 ? (span[(ls) / 2 - 1] + span[(ls) / 2 ]) / 2 / 0.6745 : span[(ls + 1) / 2 - 1] / 0.6745;
+
+            return ls % 2 == 0 ? (span[(ls) / 2 - 1] + span[(ls) / 2]) / 2 / 0.6745 : span[(ls + 1) / 2 - 1] / 0.6745;
         }
 
         private static double[] mln_wnoisest(List<double[]> coeff)
@@ -484,7 +475,7 @@ namespace DataFilterGenericLibrary
 
                 Array.Sort(span);
 
-                x[i - 1] = ls % 2 == 0 ? (span[(ls) / 2 - 1] + span[(ls) / 2 ]) / 2 / 0.6745 : span[(ls + 1) / 2 - 1] / 0.6745;
+                x[i - 1] = ls % 2 == 0 ? (span[(ls) / 2 - 1] + span[(ls) / 2]) / 2 / 0.6745 : span[(ls + 1) / 2 - 1] / 0.6745;
             }
 
             return x;
@@ -495,7 +486,7 @@ namespace DataFilterGenericLibrary
         {
             int lf = w.g1.Length;
             int lx = input.Length;
-            
+
             shift = shift % 2; // usually it is 0
 
             int first = 2 - shift;
@@ -508,12 +499,12 @@ namespace DataFilterGenericLibrary
             {
                 lenEXT = lf - 1; last = lx + lf - 1;
             }
-            else 
+            else
             {
-                lenEXT = lf / 2; last = lx % 2 == 0 ? lx : lx - 1; 
+                lenEXT = lf / 2; last = lx % 2 == 0 ? lx : lx - 1;
             }
 
-            
+
             double[] a_coeff = new double[1 + (last - first) / 2];
             double[] d_coeff = new double[1 + (last - first) / 2];
             double[] y = new double[lx + 2 * (w.g1.Length - 1)];
@@ -523,15 +514,15 @@ namespace DataFilterGenericLibrary
             int p = 0;
 
             conv2(ref z, ref tmp, ref y, ref w.h1, y.Length, 1, w.h1.Length, 1, "valid");
-            
+
             // Matlab code [first:last]
             for (int i = first - 1; i <= last - 1; i += 2)
             {
                 d_coeff[p++] = z[i];
             }
 
-            conv2(ref z , ref tmp, ref y, ref w.g1, y.Length, 1, w.g1.Length, 1, "valid");
-            
+            conv2(ref z, ref tmp, ref y, ref w.g1, y.Length, 1, w.g1.Length, 1, "valid");
+
             p = 0;
             //Matlab code [first:last]
             for (int i = first - 1; i <= last - 1; i += 2)
@@ -554,7 +545,7 @@ namespace DataFilterGenericLibrary
 
             int s = flagPer ? 2 * det.Length : 2 * det.Length - g2.Length + 2;
 
-            
+
             if (tmp.Length < s)
             {
                 throw new Exception("Bad Args");
@@ -568,7 +559,7 @@ namespace DataFilterGenericLibrary
             upsconv1(ref tmp, ref app, ref g2, det.Length, shift, pad);
             upsconv1(ref tmp, ref det, ref h2, det.Length, shift, pad);
 
-            Array.Copy(tmp,0 , app, 0, s);
+            Array.Copy(tmp, 0, app, 0, s);
         }
 
         private static double[] fliplr(double[] x)
@@ -585,10 +576,10 @@ namespace DataFilterGenericLibrary
 
         private static void upsconv1(ref double[] res, ref double[] x, ref double[] f, int _lx, int shift, Padding pad)
         {
-             //edit app.
+            //edit app.
             bool flagPer = (pad == Padding.per);
 
-            if (flagPer) 
+            if (flagPer)
             {
                 throw new Exception("Not Implemented");
             }
@@ -597,19 +588,19 @@ namespace DataFilterGenericLibrary
 
             int s = flagPer ? lx : lx - lf + 2;
 
-            int lz = x.Length % 2==0 ? lx : lx - 1;
+            int lz = x.Length % 2 == 0 ? lx : lx - 1;
 
             double[] z = new double[lz];
             double[] tmp = new double[lz + lf - 1];
 
-            for (int i = 0 ; i < lz ; i += 2)
+            for (int i = 0; i < lz; i += 2)
             {
-                z[i] = x[i/2];
+                z[i] = x[i / 2];
             }
             _conv2(ref tmp, ref z, ref f, lz, 1, lf, 1, 1);
 
             int sx = tmp.Length;
-            double d = (double)(sx - s)/ 2.0;
+            double d = (double)(sx - s) / 2.0;
 
             int first = (int)Math.Floor(d);
             int last = sx - 1 - (int)Math.Ceiling(d);
@@ -618,7 +609,7 @@ namespace DataFilterGenericLibrary
             if (shift == 1)
             {
                 first = (int)Math.Ceiling(d);
-                last = sx -1 - (int)Math.Floor(d);
+                last = sx - 1 - (int)Math.Floor(d);
             }
 
             for (int i = 0; i <= last - first; i++)
@@ -653,7 +644,7 @@ namespace DataFilterGenericLibrary
         }
 
         private static void
-            _conv2(ref double[] c, ref double[] a, ref double[] b, int ma , int na, int mb, int nb, int plusminus)
+            _conv2(ref double[] c, ref double[] a, ref double[] b, int ma, int na, int mb, int nb, int plusminus)
         {
             int p, q;
             double w;
@@ -674,7 +665,7 @@ namespace DataFilterGenericLibrary
                 }
             }
 
-                r = 0;
+            r = 0;
             for (j = 0; j < nb; ++j)
             {
                 for (i = 0; i < mb; ++i)
@@ -684,7 +675,7 @@ namespace DataFilterGenericLibrary
                     if (w != 0.0)
                     {
                         p = i + j * mc;
-                        
+
 
                         for (l = 0, q = 0; l < na; l++)
                         {
@@ -736,7 +727,7 @@ namespace DataFilterGenericLibrary
 
             int tmpm = ma + mb - 1;
             int tmpn = na + nb - 1;
-            int code ; 
+            int code;
 
             switch (shape[0])
             {
@@ -755,7 +746,7 @@ namespace DataFilterGenericLibrary
 
             if (ma * na > mb * nb)
             {
-                _conv2(ref tmp,ref  a, ref b, ma, na, mb, nb, 1);
+                _conv2(ref tmp, ref  a, ref b, ma, na, mb, nb, 1);
 
                 switched = 0;
             }
@@ -792,7 +783,7 @@ namespace DataFilterGenericLibrary
                     mc = ma - mb + 1;
                     nc = na - nb + 1;
 
-                    subMatrix(ref c, ref tmp, tmpm, tmpn, mb - 1, mb + mc - 2, nb  - 1, nb  + nc - 2);
+                    subMatrix(ref c, ref tmp, tmpm, tmpn, mb - 1, mb + mc - 2, nb - 1, nb + nc - 2);
                     break;
             }
         }
@@ -1055,7 +1046,7 @@ namespace DataFilterGenericLibrary
             0.49462389039845308567720417688,
             0.11154074335010946362132391724
         };
-        #endregion 
+        #endregion
 
         #region h_14
         public static double[] h_14 = new double[]
@@ -1075,7 +1066,7 @@ namespace DataFilterGenericLibrary
             0.00180164070404749091526826291,
             0.00035371379997452024844629584
         };
-        #endregion 
+        #endregion
 
         #region g_14
         public static double[] g_14 = new double[] 
@@ -1319,7 +1310,7 @@ namespace DataFilterGenericLibrary
                     throw new Exception("Bad Args");
             }
 
-            wavelet.nCoeff = 6 * n ;
+            wavelet.nCoeff = 6 * n;
             if (!centered)
             {
                 wavelet.offset = 0;
